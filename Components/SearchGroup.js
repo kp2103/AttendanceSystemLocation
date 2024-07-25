@@ -67,13 +67,23 @@ export default function SearchGroup(props) {
         // })
     }
 
+    async function groupInfoDocRef()
+    {
+        const groupRef =  await firestore().collection('GroupInfo').doc(groupId).get()
+        if(groupRef.exists)
+            return groupRef
+        return false
+    }
 
     async function checkGroupExist() {
         console.warn("calling groupExist()")
 
 
-        const documentReference = await firestore().collection('GroupInfo').doc(groupId).get()
-        if (documentReference.exists) {
+        // const documentReference = await firestore().collection('GroupInfo').doc(groupId).get()
+        const documentReference = await groupInfoDocRef()
+        if(documentReference)
+        // if (documentReference.exists) 
+        {
             console.log(documentReference.data())
             // setIsGroupExist(true)
             isGroupExist.current = true
@@ -92,6 +102,7 @@ export default function SearchGroup(props) {
             }
             else {
                 console.warn("Group Does Not Exist")
+                setGroupVisible(false)
             }
         }
         else {
@@ -110,13 +121,23 @@ export default function SearchGroup(props) {
 
 
     function join() {
-        getUserGroupReference().doc(groupId).set(groupInfoObject).then(() => {
-            console.warn("Joined Group")
-            // setIsJoinGroup(true)
-            // setIsAlreadyJoin(false)
-            isAlreadyJoin.current = true
-            // isGroupExist.current = false
-            props.route.params.setGroupList([...props.route.params.groupList,groupInfoObject])
+        getUserGroupReference().doc(groupId).set(groupInfoObject).then(async() => {
+            const documentReference = await groupInfoDocRef()
+            if(documentReference)
+            {
+                documentReference.ref.update({
+                    [context.userType] : firestore.FieldValue.arrayUnion(context.name)
+                }).then(()=>{
+                    console.warn("Joined Group")
+                    // setIsJoinGroup(true)
+                    // setIsAlreadyJoin(false)
+                    isAlreadyJoin.current = true
+                    // isGroupExist.current = false
+                    props.route.params.setGroupList([...props.route.params.groupList,groupInfoObject])
+                }).catch((e)=>{
+                    console.warn("Error in Joining Group : " + e)
+                })
+            }
 
         })
             .catch((error) => {

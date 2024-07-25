@@ -24,6 +24,7 @@ const ScheduleSection = (props) => {
     const [bottomSheetRef,setBottomSheetRef] = useState()
     const [reload,setReload] = useState(false)
     const identifierRef = useRef({})
+    const [isRefreshing,setisreFreshing] = useState(false)
 
     // useEffect(()=>{
     //     context.userGroupInfo.forEach((object) => {
@@ -104,6 +105,13 @@ const ScheduleSection = (props) => {
 
                 <FlatList
                     scrollEnabled={true}
+                    extraData={schedules}
+                    onRefresh={async ()=>{
+                        await getSchedules()
+                        setisreFreshing(false)
+                    }
+                    }
+                    refreshing={isRefreshing}
                     data={(schedules)}
                     ListEmptyComponent={<EmptyComponent></EmptyComponent>}
                     renderItem={({item,index})=>{
@@ -131,7 +139,7 @@ const ScheduleSection = (props) => {
                                     
                                         onPress={()=>{
                                             //   console.info(giveAttendance(context.name,item.groupId,item.subject,identifierRef.current))
-                                              (giveAttendance(context.name,item.groupId,item.subject,identifierRef.current).then((value)=>{
+                                              (giveAttendance(context.name,item.groupId,item.subject,identifierRef.current,item.radius).then((value)=>{
                                                     if(value)
                                                     {
                                                         const uName = context.name
@@ -140,7 +148,7 @@ const ScheduleSection = (props) => {
                                                         props.navigation.navigate('InAttendance',{
                                                             uName,
                                                             groupId,
-                                                            subject
+                                                            subject,
                                                         })
                                                     }
                                               }))

@@ -14,7 +14,6 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SignUp from './Components/SignUp';
 import DrawerLayout from './Components/DrawerLayout';
-import CreateNewGroup from './Components/CreateNewGroup';
 
 const Stack = createNativeStackNavigator();
 

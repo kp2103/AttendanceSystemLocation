@@ -67,7 +67,8 @@ const CreateNewGroup = (props) => {
                         getGroupDocumentReference().doc(groupId.toString()).set({
                             name: groupName.toString(),
                             onwer: context.name.toString(),
-                            groupId: groupId.toString()
+                            groupId: groupId.toString(),
+                            [context.userType] : [context.name]
                         }).then(() => {
                             console.warn("Group Created Successfully")
                             console.info(groupName)

@@ -96,16 +96,19 @@ const GroupSection = (props)=>{
 
                                     <View>
                                         <Text style={styleSheet.cardTextStyle}>{item.name}</Text>
-                                        <Text style={styleSheet.cardIdStyle}>{item.groupId}</Text>
+                                        {context.userType=='Faculty'?<Text style={styleSheet.cardIdStyle}>{item.groupId}</Text>:null}
                                     </View>
 
                                     <View style={{alignItems : 'stretch'}}>
+                                        {context.userType=='Faculty'?
                                         <TouchableOpacity onPress={()=>{share(item.name,item.groupId)}}>
-                                            <Image 
-                                                source={require('../Images/icons8-share-64.png')} 
-                                                style={{height : 35,width : 35,marginRight : 'auto',alignSelf : 'stretch',alignItems : 'flex-end'}} 
-                                            ></Image>
-                                        </TouchableOpacity>
+                                        <Image 
+                                            source={require('../Images/icons8-share-64.png')} 
+                                            style={{height : 35,width : 35,marginRight : 'auto',alignSelf : 'stretch',alignItems : 'flex-end'}} 
+                                        ></Image>
+                                    </TouchableOpacity>
+                                        :null}
+                                        
                                     </View>
 
                                 </Card.Content>

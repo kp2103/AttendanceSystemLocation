@@ -1,7 +1,8 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+// import { View, Text } from 'react-native'
+// import React from 'react'
 import firestore from '@react-native-firebase/firestore';
-
+import { equiRectangularDistance } from '../Components/DistanceCalculate/equiRectangularDistance'
+ 
 const getScheduleInfo = async(groupId,subject)=>{
     return (await firestore().collection('GroupInfo').doc(groupId).collection('ScheduleInfo').doc(subject).get()).data()
 }
@@ -15,37 +16,42 @@ const compareWIFI = (mainIdentifer,identifier)=>{
     
 } 
 
-const compareLocation = (mainIdentifer,identifier)=>{
-          // latitude is vary about 0.0014  longitude is vary 0.000039/0.000899
-        const minLatitude = mainIdentifer.latitude - 0.0014
-        const maxLatitude = mainIdentifer.latitude + 0.0014
+// const compareLocation = (mainIdentifer,identifier,radius)=>{
+//           // latitude is vary about 0.0014  longitude is vary 0.000039/0.000899
+//         const minLatitude = mainIdentifer.latitude - 0.0014
+//         const maxLatitude = mainIdentifer.latitude + 0.0014
 
-        const minLongitude = mainIdentifer.longitude - 0.000899
-        const maxLongitude = mainIdentifer.longitude + 0.000899
+//         const minLongitude = mainIdentifer.longitude - 0.000899
+//         const maxLongitude = mainIdentifer.longitude + 0.000899
 
-        if((identifier.latitude>minLatitude && identifier.latitude<maxLatitude) && (identifier.longitude>minLongitude && identifier.longitude<maxLongitude))
-        {
-          console.info(identifier)
-          console.info(mainIdentifer)
-          return true
-        }
-        console.info(identifier)
-        console.info(mainIdentifer)
-        console.log((identifier.latitude>minLatitude && identifier.latitude<maxLatitude))
-        console.log((identifier.longitude>minLongitude && identifier.longitude<maxLongitude)
-        )
+//         if((identifier.latitude>minLatitude && identifier.latitude<maxLatitude) && (identifier.longitude>minLongitude && identifier.longitude<maxLongitude))
+//         {
+//           console.info(identifier)
+//           console.info(mainIdentifer)
+//           return true
+//         }
+//         console.info(identifier)
+//         console.info(mainIdentifer)
+//         console.log((identifier.latitude>minLatitude && identifier.latitude<maxLatitude))
+//         console.log((identifier.longitude>minLongitude && identifier.longitude<maxLongitude)
+//         )
        
-        return false
-}
+//         return false
+// }
 
-const compareIdentifier = (scheduleInfo,identifier)=>{
+const compareIdentifier = async(scheduleInfo,identifier)=>{
      try{
        if(scheduleInfo.indetifierType=='WIFI')
        {
           return compareWIFI(scheduleInfo.identifier,identifier)
        }
        else{
-          return compareLocation(scheduleInfo.identifier,identifier)
+          const {latitude,longitude} = scheduleInfo.identifier
+          const distance  = await equiRectangularDistance(latitude,longitude,identifier.latitude,identifier.longitude)
+          if(distance<=scheduleInfo.radius)
+            return true
+          return false
+          // return compareLocation(scheduleInfo.identifier,identifier,scheduleInfo.radius)
        }
      }
      catch(error)
@@ -56,7 +62,7 @@ const compareIdentifier = (scheduleInfo,identifier)=>{
 
 const giveAttendance = async(user,groupId,subject,identifier)=>{
     const scheduleInfo = await getScheduleInfo(groupId,subject)
-    if(compareIdentifier(scheduleInfo,identifier))
+    if(await compareIdentifier(scheduleInfo,identifier))
     {
         console.info('verified')        
         return true

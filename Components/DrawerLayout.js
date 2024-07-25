@@ -1,6 +1,6 @@
 import React, {  } from "react";
 import {createDrawerNavigator} from '@react-navigation/drawer'
-import Home from "./Home";
+// import Home from "./Home";
 import SignUp from "./SignUp";
 import DrawerContent from "./DrawerContent";
 import BottomLayout from "./BottomLayout";
@@ -8,6 +8,7 @@ import Header from "./Header";
 import CreateNewGroup from "./CreateNewGroup";
 import SearchGroup from "./SearchGroup";
 import InAttendance from "./InAttendance";
+// import ReportSection from "./ReportSection";
 const DrawerLayout = ()=>{
     const Drawer = createDrawerNavigator()
     return(
@@ -24,7 +25,7 @@ const DrawerLayout = ()=>{
 
         <Drawer.Screen name="SearchGroup" component={SearchGroup}></Drawer.Screen>
             
-        <Drawer.Screen name="InAttendance" component={InAttendance}></Drawer.Screen>    
+        <Drawer.Screen name="InAttendance" component={InAttendance}></Drawer.Screen>   
         </Drawer.Navigator>
     )
 }

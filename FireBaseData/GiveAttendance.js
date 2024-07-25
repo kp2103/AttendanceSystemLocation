@@ -64,6 +64,7 @@ const giveAttendance = async(user,groupId,subject,identifier)=>{
     const scheduleInfo = await getScheduleInfo(groupId,subject)
     if(await compareIdentifier(scheduleInfo,identifier))
     {
+        console.log('verified')
         console.info('verified')        
         return true
     }

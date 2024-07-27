@@ -150,43 +150,36 @@ export default NewSchedule = (props) => {
         return (t)
     }
 
-    async function create() {
-        if (subject === "") {
-            console.warn('Please Enter groupName or totalDays')
-        }
-        else {
-            if (selectedGroup === "" || selectedScheduleType === "") {
-                console.warn("Please select a dropdown")
-            }
-            else {
-                console.log('in else')
-                const documentReference = firestore().collection('GroupInfo').doc(selectedGroup).collection('ScheduleInfo').doc(subject)
-                if ((await (documentReference.get())).exists) { console.warn(`Subject Name is already exists in this ${selectedGroup}`) }
-                else {
-                    documentReference.set({
-                        subject: subject,
-                        groupId: selectedGroup,
-                        // totalDays : totalDays,
-                        time: currentTime,
-                        lastDate: dateRef2.current,
-                        day: selectedScheduleType == 'Every Week' ? dateRef.current.getDay() : 7,
-                        scheduleType: selectedScheduleType,
-                        date: dateRef.current.getDate() + '-' + (dateRef.current.getMonth() + 1).toString() + '-' + dateRef.current.getFullYear(),
-                        identifier: uniqueIndetifier == 'WIFI' ? { bssid: wifiBSSID, ssid: wifiSSID } : { latitude: latitude, longitude: longitude },
-                        indetifierType: uniqueIndetifier,
-                        radius: radius
-                    }).then(() => {
-                        
-                        console.log('Schedule Create Successfully')
-                        props.setReload(true)
-                        props.updateSchedule()
-                        // BottomSheet.current.close();
+    const create = useCallback(() => {
+        const group = selectedGroup
+         
+        const documentReference = firestore().collection('GroupInfo').doc(group).collection('ScheduleInfo').doc(subject);
+        const emptyFieldCheck = !group || !subject
 
-                    })
-                }
-            }
+        if (emptyFieldCheck) {
+            console.warn("Field cannot be empty");
+            return;
         }
-    }
+
+        const data = {
+            subject: subject,
+            groupId: selectedGroup,
+            // totalDays : totalDays,
+            time: currentTime,
+            lastDate: dateRef2.current,
+            day: selectedScheduleType == 'Every Week' ? dateRef.current.getDay() : 7,
+            scheduleType: selectedScheduleType,
+            date: dateRef.current.getDate() + '-' + (dateRef.current.getMonth() + 1).toString() + '-' + dateRef.current.getFullYear(),
+            identifier: uniqueIndetifier == 'WIFI' ? { bssid: wifiBSSID, ssid: wifiSSID } : { latitude: latitude, longitude: longitude },
+            indetifierType: uniqueIndetifier,
+            radius: radius
+};
+
+        documentReference.set(data).then(() => {
+            props.setReload();
+            bottomRef.current.close();
+        }).catch((error) => console.error("Error adding document: ", error));
+    }, [props]);
 
 
 

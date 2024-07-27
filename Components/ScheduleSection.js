@@ -333,7 +333,7 @@ const ScheduleSection = (props) => {
 
     const changeReload = useCallback(() => setReload(!reload), [reload]);
 
-    async function updateLocation(cname, groupId, subject, identifier, radius) {
+    async function updateLocation(cname, groupId, subject, identifier, radius,isFaculty) {
         const documentReference = firestore()
             .collection('GroupInfo')
             .doc(groupId)
@@ -343,10 +343,13 @@ const ScheduleSection = (props) => {
         Geolocation.getCurrentPosition(async (position) => {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
-            await documentReference.update({
-                identifier: { latitude, longitude }
-            });
-            console.log('Location updated');
+            if(isFaculty)
+            {
+                await documentReference.update({
+                    identifier: { latitude, longitude }
+                });
+                console.log('Location updated');
+            }
             const attendanceGiven = await giveAttendance(cname, groupId, subject, identifier, radius);
             if (attendanceGiven) {
                 props.navigation.navigate('InAttendance', {
@@ -383,7 +386,7 @@ const ScheduleSection = (props) => {
 
     useEffect(() => {
         getSchedules();
-    }, [reload, getSchedules]);
+    }, [getSchedules]);
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener((info) => {
@@ -434,7 +437,9 @@ const ScheduleSection = (props) => {
                                         mode="contained"
                                         buttonColor={Colors.purple}
                                         textColor="white"
-                                        onPress={() => updateLocation(context.name, item.groupId, item.subject, identifierRef.current, item.radius)}
+                                        onPress={() => {
+                                            const isFaculty = context.userType=='Faculty'
+                                            updateLocation(context.name, item.groupId, item.subject, identifierRef.current, item.radius,isFaculty)}}
                                     >Join</Button>
                                 </View>
                             </Card.Content>

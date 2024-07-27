@@ -176,8 +176,12 @@ export default NewSchedule = (props) => {
                         indetifierType: uniqueIndetifier,
                         radius: radius
                     }).then(() => {
+                        
                         console.log('Schedule Create Successfully')
-                        props.setReload()
+                        props.setReload(true)
+                        props.updateSchedule()
+                        // BottomSheet.current.close();
+
                     })
                 }
             }

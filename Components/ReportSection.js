@@ -15,6 +15,7 @@ import { BarChart } from 'react-native-chart-kit'
 // import {Calendar} from 'react-native-calendars'
 import { Calendar } from "react-native-calendars";
 import LoadingComponent from "./Loading";
+import { eachDayOfInterval, isSunday } from 'date-fns'
 // import { FlatList } from "react-native-gesture-handler";
 
 const Tab = createMaterialTopTabNavigator()
@@ -34,12 +35,14 @@ const ReportSection = () => {
     const [reload, setReload] = useState(false)
     const [calendar_markedDates, setCalendar_markedDates] = useState({})
     const [isNoData, setIsNoData] = useState(undefined)
-    const [datas,setData] = useState({labels: [],
+    const [datas, setData] = useState({
+        labels: [],
         datasets: [
-          {
-            data: []
-          }
-        ]})
+            {
+                data: []
+            }
+        ]
+    })
     const [animationSource, setAnimationSource] = useState(require('../LottieAnimations/no_data_found.json'))
     let startDate, lastDate
 
@@ -49,28 +52,87 @@ const ReportSection = () => {
     const chnageSubject = useCallback((value) => { setSubject(value) }, [subject])
     const changeReload = useCallback((value) => { setReload(true) }, [reload])
 
-    function countSpecificDays(startDate, endDate, dayOfWeek) {
-        let count = 0;
-        let currentDate = new Date(startDate);
-        currentDate.setHours(0, 0, 0, 0); // Normalize start date time to midnight
+    // function countSpecificDays(startDate, endDate, dayOfWeek) {
+    //     let count = 0;
+    //     let currentDate = new Date(startDate);
+    //     currentDate.setHours(0, 0, 0, 0); // Normalize start date time to midnight
 
-        while (currentDate <= endDate) {
-            if (currentDate.getDay() === dayOfWeek) {
-                count++;
-            }
-            currentDate.setDate(currentDate.getDate() + 1);
+    //     while (currentDate <= endDate) {
+    //         if (currentDate.getDay() === dayOfWeek) {
+    //             count++;
+    //         }
+    //         currentDate.setDate(currentDate.getDate() + 1);
+    //     }
+
+    //     return count;
+    // }
+
+
+    // async function getHolidays(startDate, endDate, countryCode) {
+    //     const response = await fetch(`https://date.nager.at/Api/v2/PublicHoliday/${startDate.getFullYear()}/${countryCode}`);
+    //     const holidays = await response.json();
+    //     return holidays.filter(holiday => {
+    //       const holidayDate = new Date(holiday.date);
+    //       return holidayDate >= startDate && holidayDate <= endDate;
+    //     });
+    //   }
+      
+    function countSundays(startDate, endDate) {
+        const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+        return allDays.filter(isSunday).length;
+      }
+
+    // async function getHolidaysAndSundays(startDate, endDate, countryCode) {
+    //     // Get holidays
+    //     const holidays = await getHolidays(startDate, endDate, countryCode);
+    //     const holidayCount = holidays.length;
+      
+    //     // Count Sundays
+    //     const sundayCount = await countSundays(startDate, endDate);
+      
+    //     return (holidayCount + sundayCount);
+    //   }
+
+    //google
+
+    async function getHolidays(startDate, endDate, apiKey) {
+        const start = startDate.toISOString();
+        const end = endDate.toISOString();
+        const calendarId = 'en.indian%23holiday%40group.v.calendar.google.com';
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${start}&timeMax=${end}&singleEvents=true&orderBy=startTime`;
+      
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          return data.items.map(event => new Date(event.start.date));
+        } catch (error) {
+          console.error('Failed to fetch holidays:', error);
+          return [];
         }
+      }
+      
 
-        return count;
-    }
-
-
+      async function getHolidaysAndSundays(startDate, endDate, apiKey) {
+        // Get holidays
+        const holidays = await getHolidays(startDate, endDate, apiKey);
+        const holidayCount = holidays.length;
+      
+        // Count Sundays
+        const sundayCount = countSundays(startDate, endDate);
+      
+        return holidayCount + sundayCount;
+      }
+      
+      
     async function search(subject, isReturn) {
         let scheduleType, dayOfWeek;
         console.log(groupId + "_" + subject)
         const documentReference = await firestore().collection('UserInfo').doc(context.name).collection('Attendance').doc(groupId + "_" + subject).get()
 
-        ScheduleInfo.forEach((value) => {
+        ScheduleInfo.forEach(async(value) => {
             if (value.subject === subject) {
                 scheduleType = value.scheduleType
                 startDate = value.time.toDate()
@@ -86,9 +148,19 @@ const ReportSection = () => {
 
             // Convert milliseconds to days
             const millisecondsPerDay = 1000 * 60 * 60 * 24;
-            const differenceInDays = Math.ceil(differenceInMs / millisecondsPerDay) + 1;
+            let differenceInDays = Math.ceil(differenceInMs / millisecondsPerDay) + 1;
 
             let days = 0
+            
+            // const holidays = 0
+
+            const holidays = await getHolidaysAndSundays(startDate,lastDate,'AIzaSyCxmJsroTzyY24cx8Gip9aXmchFBo4bGvc')
+            console.log( "holidays  : " + holidays)
+            // differenceInDays = differenceInDays - holidays
+            //api
+            //AIzaSyCxmJsroTzyY24cx8Gip9aXmchFBo4bGvc
+            // await getHolidaysAndSundays(startDate,lastDate,'IN')
+
             if (scheduleType == "Every Week") {
 
                 const fullWeeks = Math.floor(differenceInDays / 7);
@@ -100,15 +172,15 @@ const ReportSection = () => {
                 let count = fullWeeks + (current <= lastDate);
                 // chnageTotalDays(((documentReference.get('attendedDays').length) * 100)/count)
                 days = ((documentReference.get('attendedDays').length) * 100) / count
-                if(!isReturn)
-                    setTotalDays((prev) => ((documentReference.get('attendedDays').length) * 100) / count)
+                if (!isReturn)
+                    setTotalDays((prev) => (((documentReference.get('attendedDays').length)-holidays) * 100) / count-holidays)
                 // chnageTotalDays(countSpecificDays(startDate, lastDate, dayOfWeek))
             }
             else {
                 console.log(differenceInDays)
                 days = ((documentReference.get('attendedDays').length) * 100) / differenceInDays
-                if(!isReturn)
-                    setTotalDays((prev) => ((documentReference.get('attendedDays').length) * 100) / differenceInDays)
+                if (!isReturn)
+                    setTotalDays((prev) => (((documentReference.get('attendedDays').length)) * 100) / differenceInDays-holidays)
                 // chnageTotalDays(((documentReference.get('attendedDays').length) * 100) / differenceInDays)
                 // setmarkedDates((documentReference.get('attendedDays')))
             }
@@ -163,7 +235,7 @@ const ReportSection = () => {
         const documentReference = firestore().collection('UserInfo').doc(context.name).collection('Attendance')
             .where(firestore.FieldPath.documentId(), '>=', startAt)
             .where(firestore.FieldPath.documentId(), '<=', endAt)
-            .onSnapshot(async(documentSnapshot) => {
+            .onSnapshot(async (documentSnapshot) => {
                 console.log('Empty : ' + documentSnapshot.empty)
                 if (!documentSnapshot.empty) {
                     attendedSubjects = []
@@ -184,17 +256,21 @@ const ReportSection = () => {
                     })
                     const results = await Promise.all(promises);
                     results.forEach((result) => attendedDays.push(result));
-              
+
                     console.log(attendedDays)
-                    setData({labels : attendedSubjects,datasets : [{data : attendedDays}]})
-                    setIsNoData(false)
+                    setData({ labels: attendedSubjects, datasets: [{ data: attendedDays }] })
+                    console.log('is no data in if: ' + isNoData)
+                    if (isNoData)
+                        setIsNoData(() => (true))
+                    setIsNoData(() => (false))
                     // return {
                     //     labels: attendedSubjects, datasets: [{
                     //         data: attendedDays
                     //     }]
                     // }
                 } else {
-                    setIsNoData(true)
+                    // if(isNoData)
+                    //     setIsNoData(()=>(true))
                     // return {message : 'No Data Found'}
                 }
             })
@@ -224,11 +300,11 @@ const ReportSection = () => {
 
             <View style={styleSheet.buttonView}>
                 <Button mode="contained" textColor="white" buttonColor={Colors.purple}
-                    labelStyle={{ fontSize: 20 }} onPress={() => {
+                    labelStyle={{ fontSize: 20 }} onPress={async () => {
                         setIsNoData(true)
                         setAnimationSource(require('../LottieAnimations/loading.json'))
-                        search(subject, false)
-                        getAllSubjectResult()
+                        await search(subject, false)
+                        await getAllSubjectResult()
                     }} >Search</Button>
             </View>
 
@@ -244,82 +320,82 @@ const ReportSection = () => {
                 :
                 (
                     <ScrollView>
-                    <View style={!isNoData ? styleSheet.progressBar : { display: "none" }}>
-                        <CircularProgress
-                            value={totalDays}
-                            activeStrokeWidth={28}
-                            duration={1500}
-                            progressValueColor={Colors.purple}
-                            radius={120}
-                            allowFontScaling={true}
-                            initialValue={0}
-                            activeStrokeColor={'#2465FD'}
-                            activeStrokeSecondaryColor={'#C25AFF'}
-                        ></CircularProgress>
-                    </View>
-                    <View style={styleSheet.calendarView}>
-                        {!isNoData ? (<Calendar
-                            markingType="multi-period"
-                            firstDay={1}
-                            style={{ backgroundColor: 'transparent' }}
-                            enableSwipeMonths={false}
-                            disableMonthChange={false}
-                            theme={{
-                                dayTextColor: '#2d4150',
-                            }}
-                            hideArrows={false}
-                            markedDates={calendar_markedDates}
+                        {totalDays != 0 && (<View>
+                            <View style={!isNoData ? styleSheet.progressBar : { display: "none" }}>
+                                <CircularProgress
+                                    value={totalDays}
+                                    activeStrokeWidth={28}
+                                    duration={1500}
+                                    progressValueColor={Colors.purple}
+                                    radius={120}
+                                    allowFontScaling={true}
+                                    initialValue={0}
+                                    activeStrokeColor={'#2465FD'}
+                                    activeStrokeSecondaryColor={'#C25AFF'}
+                                ></CircularProgress>
+                            </View>
+                            <View style={styleSheet.calendarView}>
+                                {!isNoData ? (<Calendar
+                                    markingType="multi-period"
+                                    firstDay={1}
+                                    style={{ backgroundColor: 'transparent' }}
+                                    enableSwipeMonths={false}
+                                    disableMonthChange={false}
+                                    theme={{
+                                        dayTextColor: '#2d4150',
+                                    }}
+                                    hideArrows={false}
+                                    markedDates={calendar_markedDates}
 
-                        ></Calendar>) : null}
-                    </View>            
-                    <View>
-                        <BarChart
-                        data={datas}
-                        yAxisLabel="%"
-                        height={250}
-                        fromZero
-                        width={Dimensions.get('window').width}
-                        style={{flex : 1,marginBottom : '25%'}}
-                        chartConfig={{
-                            // backgroundColor : 'white',
-                            backgroundGradientFrom: 'transparent',
-                            // backgroundGradientFromOpacity: 0,
-                            backgroundGradientTo: "transparent",
-                            backgroundGradientToOpacity: 1,
-                            color: (opacity = 1, index) => {
-                                if (index % 5 == 0) {
-                                    //yellow
-                                  return `rgba(255, 206, 86, ${opacity})`; // Tomato color for values greater than 50
-                                }
-                                else if(index % 2 == 0)
-                                {
-                                    //blue
-                                    return `rgba(54, 162, 235, ${opacity})`;
-                                } 
-                                else if(index % 2 == 1)
-                                {
-                                    //green
-                                    return `rgba(75, 192, 192, ${opacity})`
-                                }
-                                else {
-                                  return `rgba(54, 162, 235, ${opacity})`; // Light blue color for values less than or equal to 50
-                                }
-                              },
-                            strokeWidth: 20, // optional, default 3
-                            barPercentage: 0.8,
-                                                        useShadowColorFromDataset: false, // optional
-                              fillShadowGradientOpacity : 1,
-                            }}
-                        //   style={{
-                        //     marginVertical: 8,
-                        //     borderRadius: 16,
-                        //   }}
-                    ></BarChart>
+                                ></Calendar>) : null}
+                            </View>
+                        </View>)}
+                        <View>
+                            <BarChart
+                                data={datas}
+                                yAxisLabel="%"
+                                height={250}
+                                fromZero
+                                width={Dimensions.get('window').width}
+                                style={{ flex: 1, marginBottom: '25%', marginTop: '10%' }}
+                                chartConfig={{
+                                    // backgroundColor : 'white',
+                                    backgroundGradientFrom: 'transparent',
+                                    // backgroundGradientFromOpacity: 0,
+                                    backgroundGradientTo: "transparent",
+                                    backgroundGradientToOpacity: 1,
+                                    color: (opacity = 1, index) => {
+                                        if (index % 5 == 0) {
+                                            //yellow
+                                            return `rgba(255, 206, 86, ${opacity})`; // Tomato color for values greater than 50
+                                        }
+                                        else if (index % 2 == 0) {
+                                            //blue
+                                            return `rgba(54, 162, 235, ${opacity})`;
+                                        }
+                                        else if (index % 2 == 1) {
+                                            //green
+                                            return `rgba(75, 192, 192, ${opacity})`
+                                        }
+                                        else {
+                                            return `rgba(54, 162, 235, ${opacity})`; // Light blue color for values less than or equal to 50
+                                        }
+                                    },
+                                    strokeWidth: 20, // optional, default 3
+                                    barPercentage: 0.8,
+                                    useShadowColorFromDataset: false, // optional
+                                    fillShadowGradientOpacity: 1,
+                                }}
+                            //   style={{
+                            //     marginVertical: 8,
+                            //     borderRadius: 16,
+                            //   }}
+                            ></BarChart>
 
                         </View>
 
-                </ScrollView>
-        
+                    </ScrollView>
+
                     // <View style={{flex : 1,height : '100%'}}>
                     //     <Tab.Navigator>
                     //         <Tab.Screen name="Report"

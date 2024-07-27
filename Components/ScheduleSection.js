@@ -6,6 +6,8 @@ import * as Animayable from 'react-native-animatable'
 import { UserInfo } from "../App";
 import firestore from '@react-native-firebase/firestore'
 import Colors from "../Color/Colors";
+// import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import {format} from 'date-fns'
 // import NetInfo from '@react-native-community/netinfo'
 // import { tabBarStyle } from "./BottomLayout";
 // import DropDown from "./DropDown";
@@ -33,13 +35,69 @@ const ScheduleSection = (props) => {
     // },[])
     const chnageSchedules = useCallback(()=>{setSchedules([])})
     const chnageReload = useCallback(()=>{setReload(!reload)})
-    const currentDate = useMemo(()=>{return new Date()})
+    // const currentDate = useMemo(()=>{return new Date()})
 
+
+    async function updateLocation(cname,groupId,subject,identifierRef,radius)
+    {
+        const documentReference = (firestore().collection('GroupInfo').doc(groupId).collection('ScheduleInfo').doc(subject))
+        
+        let  latitude = undefined
+        let longitude = undefined
+        
+        Geolocation.getCurrentPosition((position)=>{
+            latitude = position.coords.latitude
+            longitude = position.coords.longitude
+            console.log(latitude + " " + longitude)
+            documentReference.update(
+                {
+                    identifier : {
+                        latitude : latitude,longitude :longitude
+                    }
+                }
+            ).then(()=>{
+                console.log('updated')
+                giveAttendance(cname,groupId,subject,identifierRef,radius).then((value)=>{
+                    if(value)
+                    {
+                        const uName = cname
+                        // const groupId = groupId
+                        // const subject = item.subject
+                        props.navigation.navigate('InAttendance',{
+                            uName,
+                            groupId,
+                            subject,
+                        })
+                    }
+              })
+
+                // return true
+            })
+
+            // identifierRef.current = {
+            //     latitude : position.coords.latitude,
+            //     longitude : position.coords.longitude
+            // }
+        })
+
+    }
 
     const getSchedules = ()=>{
         // setSchedules([])
         // schedules.clear()
-        schedules.splice(0,schedules.length)
+        const newSchedule = []
+        // const zonedDate = utcToZonedTime(new Date(),'Asia/Kolkata')
+        // currentDate = zonedTimeToUtc(zonedDate, timeZone)
+        let currentDate = new Date();
+
+        // const timezoneOffset = new Date().getTimezoneOffset();
+    
+        // Adjust the date by adding the offset
+        // currentDate = new Date(currentDate.getTime() - timezoneOffset * 60000);
+    
+
+
+        // schedules.splice(0,schedules.length)
         const collectionReference = firestore().collection('GroupInfo')
         context.userGroupInfo.forEach((object)=>{
             collectionReference.doc(object.groupId).collection('ScheduleInfo').onSnapshot((querySnapShort)=>{
@@ -50,7 +108,7 @@ const ScheduleSection = (props) => {
                     console.log(document.get('subject'))
                     if((currentDate<=lastDate && currentDate>=startDate) && (day==currentDate.getDay() || day==7))
                     {
-                        schedules.push(document.data())
+                        newSchedule.push(document.data())
                         console.log(schedules)
                     }
                     else{
@@ -59,6 +117,7 @@ const ScheduleSection = (props) => {
                 })
             })
         })
+        setSchedules(()=>(newSchedule))
     }
 
     useEffect(()=>{
@@ -137,21 +196,13 @@ const ScheduleSection = (props) => {
                                     
                                     textColor='white'
                                     
-                                        onPress={()=>{
+                                        onPress={async()=>{
+                                            updateLocation(context.name,item.groupId,item.subject,identifierRef.current,item.radius).then((response)=>{
+                                                console.info(response)
+                                                // if(response)
+      
+                                            })
                                             //   console.info(giveAttendance(context.name,item.groupId,item.subject,identifierRef.current))
-                                              (giveAttendance(context.name,item.groupId,item.subject,identifierRef.current,item.radius).then((value)=>{
-                                                    if(value)
-                                                    {
-                                                        const uName = context.name
-                                                        const groupId = item.groupId
-                                                        const subject = item.subject
-                                                        props.navigation.navigate('InAttendance',{
-                                                            uName,
-                                                            groupId,
-                                                            subject,
-                                                        })
-                                                    }
-                                              }))
                                               
                                         }}
                                     >Join</Button>
@@ -176,7 +227,7 @@ const ScheduleSection = (props) => {
                     style={context.userType=='Faculty'?styleSheet.fabButtonStyle:{display : 'none'}}
                 ></AnimatedFAB>
 
-                <NewSchedule setReload={chnageReload} setRef={setBottomSheetRef} navigation={props.navigation}></NewSchedule>
+                <NewSchedule setReload={chnageReload} updateSchedule={getSchedules} setRef={setBottomSheetRef} navigation={props.navigation}></NewSchedule>
 
 
                 

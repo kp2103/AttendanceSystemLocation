@@ -72,8 +72,8 @@ const compareIdentifier = async (scheduleInfo, identifier) => {
       const { latitude, longitude } = scheduleInfo.identifier
       console.log(latitude + ' ' + longitude)
       console.log('user : ' + identifier.latitude + ' ' + identifier.longitude)
-      // const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),parseFloat(identifier.latitude),parseFloat(identifier.longitude))
-      const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),23.0857324,72.5522523)
+      const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),parseFloat(identifier.latitude),parseFloat(identifier.longitude))
+      // const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),23.0857324,72.5522523)
 
       console.log('distance : ' + distance)
       ToastAndroid.show('Distance : ' + distance,ToastAndroid.SHORT)

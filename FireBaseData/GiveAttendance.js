@@ -2,8 +2,10 @@
 // import React from 'react'
 import firestore from '@react-native-firebase/firestore';
 import { equiRectangularDistance } from '../Components/DistanceCalculate/equiRectangularDistance'
-import { } from '../Components/DistanceCalculate/euclideanDistance'
+import { euclideanDistance} from '../Components/DistanceCalculate/euclideanDistance'
 import { haversineDistance } from '../Components/DistanceCalculate/haversineDistance'
+import { ToastAndroid } from 'react-native';
+
 
 const getScheduleInfo = async (groupId, subject) => {
   return (await firestore().collection('GroupInfo').doc(groupId).collection('ScheduleInfo').doc(subject).get()).data()
@@ -16,7 +18,7 @@ const compareWIFI = (mainIdentifer, identifier) => {
   return false
 }
 
-const compareLocation = (mainIdentifer, identifier, radius) => {
+const compareLocation = async(mainIdentifer, identifier, radius) => {
 
 
   const R = 6371000; // Earth's radius in meters
@@ -42,22 +44,21 @@ const compareLocation = (mainIdentifer, identifier, radius) => {
 
 
   // latitude is vary about 0.0014  longitude is vary 0.000039/0.000899
-  // const minLatitude = mainIdentifer.latitude - 0.000018
-  // const maxLatitude = mainIdentifer.latitude + 0.000018
+    // const minLatitude = mainIdentifer.latitude - 0.000039
+    // const maxLatitude = mainIdentifer.latitude + 0.000899
 
-  // const minLongitude = mainIdentifer.longitude - 0.000025
-  // const maxLongitude = mainIdentifer.longitude + 0.000025
+    // const minLongitude = mainIdentifer.longitude - 0.000025
+    // const maxLongitude = mainIdentifer.longitude + 0.000025
+    console.info("Main identifier : " + JSON.stringify(mainIdentifer))
+    console.info("User identifier : " + JSON.stringify(identifier))
+    console.log((identifier.latitude > minLatitude && identifier.latitude < maxLatitude))
+    console.log((identifier.longitude > minLongitude && identifier.longitude < maxLongitude))
 
-  if ((identifier.latitude > minLatitude && identifier.latitude < maxLatitude) && (identifier.longitude > minLongitude && identifier.longitude < maxLongitude)) {
+  if ((identifier.latitude >= minLatitude && identifier.latitude <= maxLatitude) && (identifier.longitude >= minLongitude && identifier.longitude <= maxLongitude)) {
     console.info(identifier)
     console.info(mainIdentifer)
     return true
   }
-  console.info(identifier)
-  console.info(mainIdentifer)
-  console.log((identifier.latitude > minLatitude && identifier.latitude < maxLatitude))
-  console.log((identifier.longitude > minLongitude && identifier.longitude < maxLongitude)
-  )
 
   return false
 }
@@ -71,12 +72,15 @@ const compareIdentifier = async (scheduleInfo, identifier) => {
       const { latitude, longitude } = scheduleInfo.identifier
       console.log(latitude + ' ' + longitude)
       console.log('user : ' + identifier.latitude + ' ' + identifier.longitude)
-      // const distance  = await haversineDistance(latitude,longitude,identifier.latitude,identifier.longitude)
-      // console.log('distance : ' + distance)
-      // if(distance<=scheduleInfo.radius)
-      //   return true
-      // return false
-      return compareLocation(scheduleInfo.identifier, identifier, scheduleInfo.radius)
+      // const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),parseFloat(identifier.latitude),parseFloat(identifier.longitude))
+      const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),23.0857324,72.5522523)
+
+      console.log('distance : ' + distance)
+      ToastAndroid.show('Distance : ' + distance,ToastAndroid.SHORT)
+      if(parseInt(distance)<=scheduleInfo.radius)
+        return true
+      return false
+      // return await compareLocation(scheduleInfo.identifier, identifier, scheduleInfo.radius)
     }
   }
   catch (error) {
@@ -93,6 +97,7 @@ const giveAttendance = async (user, groupId, subject, identifier) => {
   }
   else {
     console.log('could not uniquely identify indetifier')
+    ToastAndroid.show('could not uniquely identify indetifier', ToastAndroid.SHORT);
     return false
   }
 }

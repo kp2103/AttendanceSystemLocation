@@ -11,6 +11,7 @@ import NetInfo from '@react-native-community/netinfo'
 // import * as Animayable from 'react-native-animatable'
 import firestore from '@react-native-firebase/firestore'
 import LottieView from 'lottie-react-native';
+import { ToastAndroid } from 'react-native';
 import DatePicker from 'react-native-date-picker'
 import Geolocation from '@react-native-community/geolocation'
 
@@ -150,16 +151,20 @@ export default NewSchedule = (props) => {
         return (t)
     }
 
-    const create = useCallback(() => {
+    const create = useCallback(async() => {
         const group = selectedGroup
          
         const documentReference = firestore().collection('GroupInfo').doc(group).collection('ScheduleInfo').doc(subject);
-        const emptyFieldCheck = !group || !subject
-
-        if (emptyFieldCheck) {
-            console.warn("Field cannot be empty");
-            return;
+        if((await (documentReference.get())).exists)
+        {
+            ToastAndroid.show('Subject is already exist', ToastAndroid.SHORT);
         }
+        const emptyFieldCheck = !selectedGroup || !subject
+
+        // if (emptyFieldCheck) {
+        //     console.warn("Field cannot be empty");
+        //     return;
+        // }
 
         const data = {
             subject: subject,
@@ -172,11 +177,13 @@ export default NewSchedule = (props) => {
             date: dateRef.current.getDate() + '-' + (dateRef.current.getMonth() + 1).toString() + '-' + dateRef.current.getFullYear(),
             identifier: uniqueIndetifier == 'WIFI' ? { bssid: wifiBSSID, ssid: wifiSSID } : { latitude: latitude, longitude: longitude },
             indetifierType: uniqueIndetifier,
-            radius: radius
+            radius: parseInt(radius)
 };
 
         documentReference.set(data).then(() => {
             props.setReload();
+            // props.schedule.push(data)
+            props.updateSchedule([...props.schedule,data])
             bottomRef.current.close();
         }).catch((error) => console.error("Error adding document: ", error));
     }, [props]);

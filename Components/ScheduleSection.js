@@ -350,7 +350,7 @@ const ScheduleSection = (props) => {
                 });
                 console.log('Location updated');
             }
-            const attendanceGiven = await giveAttendance(cname, groupId, subject, identifier, radius);
+            const attendanceGiven = await giveAttendance(cname, groupId, subject, {latitude,longitude}, radius);
             if (attendanceGiven) {
                 props.navigation.navigate('InAttendance', {
                     uName: cname,
@@ -365,7 +365,7 @@ const ScheduleSection = (props) => {
 
     const getSchedules = useCallback(() => {
         const newSchedules = [];
-        setSchedules([])
+        // setSchedules([])
         const currentDate = new Date();
         const collectionReference = firestore().collection('GroupInfo');
 
@@ -379,14 +379,14 @@ const ScheduleSection = (props) => {
                         newSchedules.push(document.data());
                     }
                 });
-                setSchedules(newSchedules);
             });
+            setSchedules(newSchedules);
         });
     }, [context.userGroupInfo]);
 
     useEffect(() => {
         getSchedules();
-    }, [getSchedules]);
+    }, [reload,getSchedules]);
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener((info) => {
@@ -456,7 +456,7 @@ const ScheduleSection = (props) => {
                     onPress={() => bottomSheetRef.current.open()}
                     style={context.userType === 'Faculty' ? styleSheet.fabButtonStyle : { display: 'none' }}
                 />
-                <NewSchedule setReload={changeReload} updateSchedule={getSchedules} setRef={setBottomSheetRef} navigation={props.navigation} />
+                <NewSchedule setReload={changeReload} updateSchedule={getSchedules} schedule={schedules} setRef={setBottomSheetRef} navigation={props.navigation} />
             </View>
         </Animatable.View>
     );

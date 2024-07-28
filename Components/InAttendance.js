@@ -94,6 +94,8 @@ export default function InAttendance(props) {
                         attendedDays : firestore.FieldValue.arrayUnion(obj)
                     }).then(()=>{
                         console.log('Attendance updated successfully')
+                        ToastAndroid.show('Attendance updated successfully', ToastAndroid.SHORT);
+  
                     })
                 }else{
                     // console.log('Attendance is already taken')
@@ -105,6 +107,8 @@ export default function InAttendance(props) {
                     attendedDays :[obj] 
                 }).then(()=>{
                     console.log('Attendance set successfully')
+                    ToastAndroid.show('Attendance set successfully', ToastAndroid.SHORT);
+
                 })
            }
            

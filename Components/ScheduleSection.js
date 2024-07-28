@@ -350,7 +350,7 @@ const ScheduleSection = (props) => {
                 });
                 console.log('Location updated');
             }
-            const attendanceGiven = await giveAttendance(cname, groupId, subject, {latitude,longitude}, radius);
+            const attendanceGiven = await giveAttendance(cname, groupId, subject, {latitude,longitude});
             if (attendanceGiven) {
                 props.navigation.navigate('InAttendance', {
                     uName: cname,

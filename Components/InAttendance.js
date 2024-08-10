@@ -87,7 +87,7 @@ export default function InAttendance(props) {
            {
                 const data = (await documentReference.get()).get('attendedDays')
                 const newDate = new Date()
-                const newId = newDate.getDate() +'-'+ newDate.getMonth()+1 + '-' + newDate.getFullYear()
+                const newId = newDate.getDate() +'-'+ parseInt(newDate.getMonth()+1) + '-' + newDate.getFullYear()
                 if(data[data.length -1 ].id != newId)
                 {
                     documentReference.update({

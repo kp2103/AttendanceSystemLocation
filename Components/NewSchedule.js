@@ -159,12 +159,13 @@ export default NewSchedule = (props) => {
         {
             ToastAndroid.show('Subject is already exist', ToastAndroid.SHORT);
         }
-        const emptyFieldCheck = !selectedGroup || !subject
+        const emptyFieldCheck = !selectedGroup || !subject 
 
-        // if (emptyFieldCheck) {
-        //     console.warn("Field cannot be empty");
-        //     return;
-        // }
+        if (emptyFieldCheck) {
+            ToastAndroid.show('Field cannot be empty',ToastAndroid.SHORT)
+            console.warn("Field cannot be empty");
+            return;
+        }
 
         const data = {
             subject: subject,
@@ -322,8 +323,8 @@ export default NewSchedule = (props) => {
                                 <View>
                                     <TextInput
                                         mode='flat'
-                                        placeholder='Radius in meter'
-                                        inputMode='numeric'
+                                        placeholder='Radius in meter(default is 5)'
+                                        inputMode='numeric'                                
                                         textColor={Colors.purple}
                                         placeholderTextColor={Colors.indianRed}
                                         onChangeText={(radius) => {

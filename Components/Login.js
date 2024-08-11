@@ -1,17 +1,20 @@
 import LottieView from "lottie-react-native";
 import React, { useState,useContext, useCallback } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View,ToastAndroid } from "react-native";
 import { Button, Text, TextInput ,RadioButton ,ToggleButton,SegmentedButtons} from 'react-native-paper'
 import UserData from "../FireBaseData/UserData";
 import {UserInfo} from '../App'
 import Toggle from 'react-native-toggle-element'
 import Colors from "../Color/Colors";
+import LoadingComponent from "./Loading";
 const Login = (props)=>{
     const [uid,setUid] = useState("")
     const [upass,setUpass] = useState("")
     const [userType,setUserType] = useState('Student')
     const [toggleValue,setToggleValue] = useState(false)
     const UInfo = useContext(UserInfo)
+    // const [isclicked,setIsClicked] = useState(false)
+    const [animationSource,setAnimationSource] = useState(require('../LottieAnimations/login.json'))
     
     const changeUserName = useCallback((value)=>{setUid(value)},[uid])
     const changeUSerPassword = useCallback((value)=>{setUpass(value)},[upass])
@@ -23,12 +26,14 @@ const Login = (props)=>{
         let response = await UserData(uid)
         if(uid=="" || upass=="")
         {
+            ToastAndroid.show("Enter userid or password",ToastAndroid.SHORT)
             console.warn("Enter userid or password")
         }
         else if(response.exists)
         {
             if((await response.get('password')).toString()==upass && (await response.get('type').toString()==userType))
             {
+                ToastAndroid.show("Successfull",ToastAndroid.SHORT)
                 console.log("Successfull")
                 UInfo.setName(uid)
                 UInfo.setUserType(userType)
@@ -36,10 +41,12 @@ const Login = (props)=>{
                 props.navigation.replace('HomeDrawer')
             }
             else{
+                ToastAndroid.show("userid or password is invalid",ToastAndroid.SHORT)
                 console.warn("userid or password is invalid")
             }
         }
         else{
+            ToastAndroid.show("User does not exist",ToastAndroid.SHORT)
             console.warn("User does not exist")
         }
     }
@@ -56,8 +63,9 @@ const Login = (props)=>{
                     style = {{height:'80%'}}
                     autoPlay
                     loop
-                    source={require('../LottieAnimations/login.json')}
+                    source={animationSource}
                 ></LottieView>
+                {/* : <LoadingComponent></LoadingComponent>} */}
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={{fontSize : 35,textAlign:"center",marginBottom:20}}>{UserInfo.name}</Text>
@@ -139,6 +147,7 @@ const Login = (props)=>{
             </View>
             <Pressable>
                 <Button onPress={()=>{
+                        setAnimationSource(require('../LottieAnimations/loading.json'))
                         onBtnClick()
                         console.log(userType)
                     }} 

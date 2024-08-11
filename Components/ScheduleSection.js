@@ -311,7 +311,7 @@
 
 
 import React, { useCallback, useContext, useEffect, useState, useRef } from "react";
-import { StyleSheet, View, FlatList } from 'react-native';
+import { StyleSheet, View, FlatList, ToastAndroid } from 'react-native';
 import { Text, AnimatedFAB, Card, Avatar, Button } from "react-native-paper";
 import * as Animatable from 'react-native-animatable';
 import { UserInfo } from "../App";
@@ -340,26 +340,33 @@ const ScheduleSection = (props) => {
             .collection('ScheduleInfo')
             .doc(subject);
 
-        Geolocation.getCurrentPosition(async (position) => {
+        Geolocation.getCurrentPosition((position) => {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
+            console.log('Join location :' + latitude,longitude)
             if(isFaculty)
             {
-                await documentReference.update({
+                documentReference.update({
                     identifier: { latitude, longitude }
-                });
-                console.log('Location updated');
+                }).then(()=>{
+                    console.log('Location updated');
+                })
             }
-            const attendanceGiven = await giveAttendance(cname, groupId, subject, {latitude,longitude});
-            if (attendanceGiven) {
-                props.navigation.navigate('InAttendance', {
-                    uName: cname,
-                    groupId,
-                    subject,
-                });
-            }
+            giveAttendance(cname, groupId, subject, {latitude,longitude}).then((attendanceGiven)=>{
+
+                if (attendanceGiven) {
+                    props.navigation.navigate('InAttendance', {
+                        uName: cname,
+                        groupId,
+                        subject,
+                    });
+                }
+                else{
+                    ToastAndroid.show('Not Uniquely idenify')
+                }
+            })
         }, (error) => {
-            console.error(error);
+            // console.error(error);
         });
     }
 
@@ -408,6 +415,7 @@ const ScheduleSection = (props) => {
     return (
         <Animatable.View animation={'fadeIn'} duration={700} useNativeDriver={true}>
             <View style={{ height: '100%' }}>
+                
                 <FlatList
                     scrollEnabled={true}
                     onRefresh={async () => {

@@ -65,23 +65,34 @@ const compareLocation = async(mainIdentifer, identifier, radius) => {
 
 const compareIdentifier = async (scheduleInfo, identifier) => {
   try {
-    if (scheduleInfo.indetifierType == 'WIFI') {
-      return compareWIFI(scheduleInfo.identifier, identifier)
-    }
-    else {
+    // if (scheduleInfo.indetifierType == 'WIFI') {
+    //   return compareWIFI(scheduleInfo.identifier, identifier)
+    // }
+    // else {
       const { latitude, longitude } = scheduleInfo.identifier
+      if(latitude == null || longitude==null)
+      {
+        ToastAndroid.show('main identifier error')
+        console.info('main error')
+      }
+      
+      if(identifier.latitude==null || identifier.longitude==null)
+      {
+        console.info('ide error')
+        ToastAndroid.show('identifier error')
+      }
       console.log(latitude + ' ' + longitude)
       console.log('user : ' + identifier.latitude + ' ' + identifier.longitude)
-      const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),parseFloat(identifier.latitude),parseFloat(identifier.longitude))
+      const distance  = await equiRectangularDistance((latitude),(longitude),(identifier.latitude),(identifier.longitude))
       // const distance  = await equiRectangularDistance(parseFloat(latitude),parseFloat(longitude),23.0857324,72.5522523)
 
       console.log('distance : ' + distance)
-      ToastAndroid.show('Distance : ' + distance,ToastAndroid.SHORT)
-      if(parseInt(distance)<=scheduleInfo.radius)
+      ToastAndroid.show('Distance : ' + distance)
+      if(parseInt(distance)<=parseInt(scheduleInfo.radius))
         return true
       return false
       // return await compareLocation(scheduleInfo.identifier, identifier, scheduleInfo.radius)
-    }
+    // }
   }
   catch (error) {
     console.log(error)
@@ -96,8 +107,8 @@ const giveAttendance = async (user, groupId, subject, identifier) => {
     return true
   }
   else {
+    ToastAndroid.show('could not uniquely identify indetifier');
     console.log('could not uniquely identify indetifier')
-    ToastAndroid.show('could not uniquely identify indetifier', ToastAndroid.SHORT);
     return false
   }
 }
